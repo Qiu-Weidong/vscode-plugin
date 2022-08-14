@@ -56,8 +56,7 @@
 		  }],
 		  "grammars": [{
 			"language": "hip",
-			"scopeName": "source.hip",
-			"path": "./syntaxes/hip.tmLanguage.json"
+			"scopeName": "source.hip"
 		  }]
 	},
 	"scripts": {

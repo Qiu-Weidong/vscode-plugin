@@ -3,8 +3,9 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
+import { CharStreams, CommonTokenStream } from 'antlr4ts';
 import * as path from 'path';
-import { workspace, ExtensionContext } from 'vscode';
+import { workspace, ExtensionContext, languages, SemanticTokens, ProviderResult, TextDocument, DocumentSemanticTokensProvider, SemanticTokensLegend, SemanticTokensBuilder } from 'vscode';
 
 import {
 	LanguageClient,
@@ -12,11 +13,45 @@ import {
 	ServerOptions,
 	TransportKind
 } from 'vscode-languageclient/node';
+import { Lex } from './parser/Lex';
 
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-	console.log('client activate..........');
+	console.log('client activate!');
+
+
+	const tokenTypes = ['class', 'interface', 'enum', 'function', 'variable'];
+	const tokenModifiers = ['declaration', 'documentation'];
+	const legend = new SemanticTokensLegend(tokenTypes, tokenModifiers);
+
+	const provider: DocumentSemanticTokensProvider = {
+		provideDocumentSemanticTokens(
+			document: TextDocument
+		): ProviderResult<SemanticTokens> {
+			// 黨打開hip文件或者修改hip文件時觸發
+			const stream = CharStreams.fromString(document.getText() );
+			const lexer: Lex = new Lex(stream);
+			const tokens = new CommonTokenStream(lexer);
+
+			const builder = new SemanticTokensBuilder(legend);
+			
+			builder.push(1, 4, 7, 0);
+			builder.push(3, 5, 4, 2);
+			
+			return builder.build();
+		}
+	};
+
+	const selector = { language: 'hip', scheme: 'file' }; // register for all hip documents from the local file system
+
+	languages.registerDocumentSemanticTokensProvider(selector, provider, legend);
+
+
+
+
+
+	
 	// The server is implemented in node 服务器由node实现
 	const serverModule = context.asAbsolutePath(
 		path.join('server', 'out', 'server.js')
