@@ -11,10 +11,7 @@ import {
 	DidChangeConfigurationNotification,
 
 	TextDocumentSyncKind,
-	InitializeResult,
-
-	// DocumentSemanticTokensProvider,
-	ColorInformation
+	InitializeResult
 } from 'vscode-languageserver/node';
 
 // import { DOcumentSemanticTokensProvider } from;
@@ -190,26 +187,6 @@ connection.onDidChangeWatchedFiles(_change => {
 	connection.console.log('We received an file change event');
 });
 
-connection.onDocumentColor(documentColorParams => {
-	const result : ColorInformation[] = [];
-
-	const identify = documentColorParams.textDocument.uri;
-	const document = documents.get(identify);
-	const text = document?.getText();
-	// console.log("onDOcumentColor: ", text);
-	const color : ColorInformation = {
-		range: { start:{line:1, character:1}, end: {line:2, character:3} },
-		color: {
-			red:255,
-			blue: 0,
-			green: 0,
-			alpha: 125
-		}
-	};
-
-	result.push(color);
-	return result;
-});
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events

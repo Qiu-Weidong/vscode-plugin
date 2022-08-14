@@ -402,6 +402,6 @@ KW_Comma: COMMA;
 KW_Colon: COLON;
 KW_SemiColon: SEMICOLON;
 KW_Period: PERIOD;
-
+KW_ChineseComma : '、';
 
 

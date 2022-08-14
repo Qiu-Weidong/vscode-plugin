@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
-import { CharStreams, CommonTokenStream } from 'antlr4ts';
+import { CharStreams, CommonTokenStream, Token } from 'antlr4ts';
 import * as path from 'path';
 import { workspace, ExtensionContext, languages, SemanticTokens, ProviderResult, TextDocument, DocumentSemanticTokensProvider, SemanticTokensLegend, SemanticTokensBuilder } from 'vscode';
 
@@ -21,9 +21,15 @@ export function activate(context: ExtensionContext) {
 	console.log('client activate!');
 
 
-	const tokenTypes = ['class', 'interface', 'enum', 'function', 'variable'];
-	const tokenModifiers = ['declaration', 'documentation'];
-	const legend = new SemanticTokensLegend(tokenTypes, tokenModifiers);
+	const tokenTypes = ['namespace', 'keyword','class', 'enum', 'interface',
+			'struct', 'typeParameter', 'type', 'parameter', 'variable',
+			'property', 'enumMember', 'decorator', 'event', 'function',
+			'method', 'comment', 'string', 'keyword',
+			'number', 'regexp', 'function', 'namespace', 'macro', 'class', 'enum', 'interface',
+			'struct', 'typeParameter', 'type', 'parameter', 'variable',
+			'property', 'enumMember', 'decorator', 'event'
+		];
+	const legend = new SemanticTokensLegend(tokenTypes);
 
 	const provider: DocumentSemanticTokensProvider = {
 		provideDocumentSemanticTokens(
@@ -33,12 +39,14 @@ export function activate(context: ExtensionContext) {
 			const stream = CharStreams.fromString(document.getText() );
 			const lexer: Lex = new Lex(stream);
 			const tokens = new CommonTokenStream(lexer);
-
+			
 			const builder = new SemanticTokensBuilder(legend);
-			
-			builder.push(1, 4, 7, 0);
-			builder.push(3, 5, 4, 2);
-			
+			const n = tokens.getNumberOfOnChannelTokens();
+			for(let i=0; i<n; i++) {
+				const token : Token = tokens.get(i);
+				builder.push(token.line-1, token.charPositionInLine, token.text.length, token.type);
+			}
+
 			return builder.build();
 		}
 	};
@@ -106,3 +114,6 @@ export function deactivate(): Thenable<void> | undefined {
 	}
 	return client.stop();
 }
+
+
+

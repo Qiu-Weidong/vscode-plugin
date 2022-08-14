@@ -32,3 +32,5 @@ KW_Comma=31
 KW_Colon=32
 KW_SemiColon=33
 KW_Period=34
+KW_ChineseComma=35
+'、'=35
