@@ -1,0 +1,32 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "周髀",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#strings"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.control.hip",
+				"match": "\\b(者|也|今|有)\\b"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.hip",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.hip",
+					"match": "\\\\."
+				}
+			]
+		}
+	},
+	"scopeName": "source.hip"
+}

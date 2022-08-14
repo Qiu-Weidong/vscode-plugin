@@ -16,7 +16,7 @@ import {
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-	
+	console.log('client activate..........');
 	// The server is implemented in node 服务器由node实现
 	const serverModule = context.asAbsolutePath(
 		path.join('server', 'out', 'server.js')

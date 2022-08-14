@@ -6,28 +6,20 @@ import {
 	createConnection,
 	TextDocuments,
 	Diagnostic,
-	DiagnosticSeverity,
 	ProposedFeatures,
 	InitializeParams,
 	DidChangeConfigurationNotification,
-	CompletionItem,
-	CompletionItemKind,
-	TextDocumentPositionParams,
+
 	TextDocumentSyncKind,
 	InitializeResult,
-	HoverParams,
-	Hover,
-	DocumentFormattingParams,
-	SignatureHelpParams,
-	SignatureHelp,
-	DocumentHighlight,
-	DocumentHighlightParams,
-	Position
+
+	// DocumentSemanticTokensProvider,
+	ColorInformation
 } from 'vscode-languageserver/node';
 
+// import { DOcumentSemanticTokensProvider } from;
 import {
-	TextDocument, TextEdit
-} from 'vscode-languageserver-textdocument';
+	TextDocument} from 'vscode-languageserver-textdocument';
 
 import { CharStreams, CommonTokenStream, Token } from 'antlr4ts';
 import { HipLexer } from './parser/HipLexer';
@@ -70,16 +62,16 @@ connection.onInitialize((params: InitializeParams) => {
 			textDocumentSync: TextDocumentSyncKind.Incremental,
 			// Tell the client that this server supports code completion.
 			// 支持代码自动补全。
-			completionProvider: {
-				resolveProvider: true
-			},
-			hoverProvider: true, // 启用悬停功能
-			documentFormattingProvider: true, // 启用代码格式化特性
+			// completionProvider: {
+			// 	resolveProvider: true
+			// },
+			// hoverProvider: true, // 启用悬停功能
+			// documentFormattingProvider: true, // 启用代码格式化特性
 			// 启用函数签名功能
-			signatureHelpProvider: {
-				triggerCharacters: ['('],
-			},
-			// documentHighlightProvider: true
+			// signatureHelpProvider: {
+			// 	triggerCharacters: ['('],
+			// },
+			colorProvider: true
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -167,10 +159,6 @@ documents.onDidChangeContent(change => {
 });
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-	// In this simple example we get the settings for every validate run.
-	// 在这个简单的示例中，每次校验运行时我们都获取一次配置
-	const settings = await getDocumentSettings(textDocument.uri);
-
 	// textDocument = file:///c%3A/Users/56838/Documents/llvm/tpantlr2-code/test/hello.hip (文件的絕對路徑)
 	// The validator creates diagnostics for all uppercase words length 2 and more
 	// 校验器如果检测到连续超过2个以上的大写字母则会报错
@@ -190,7 +178,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	lexer.addErrorListener(listener);
 	const parserListener = new HipErrorListener<Token>(diagnostics);
 	parser.addErrorListener(parserListener);
-	const tree = parser.compilationUnit();
 	
 	// Send the computed diagnostics to VSCode.
 	// 将错误处理结果发送给VS Code
@@ -203,110 +190,26 @@ connection.onDidChangeWatchedFiles(_change => {
 	connection.console.log('We received an file change event');
 });
 
-// This handler provides the initial list of the completion items.
-// 这个处理函数提供了初始补全项列表
-connection.onCompletion(
-	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-		// The pass parameter contains the position of the text document in
-		// which code complete got requested. For the example we ignore this
-		// info and always provide the same completion items.
-		return [
-			{
-				label: 'TypeScript',
-				kind: CompletionItemKind.Text,
-				data: 1
-			},
-			{
-				label: 'JavaScript',
-				kind: CompletionItemKind.Text,
-				data: 2
-			}
-		];
-	}
-);
+connection.onDocumentColor(documentColorParams => {
+	const result : ColorInformation[] = [];
 
-// This handler resolves additional information for the item selected in
-// the completion list.
-connection.onCompletionResolve(
-	(item: CompletionItem): CompletionItem => {
-		if (item.data === 1) {
-			item.detail = 'TypeScript details';
-			item.documentation = 'TypeScript documentation';
-		} else if (item.data === 2) {
-			item.detail = 'JavaScript details';
-			item.documentation = 'JavaScript documentation';
+	const identify = documentColorParams.textDocument.uri;
+	const document = documents.get(identify);
+	const text = document?.getText();
+	// console.log("onDOcumentColor: ", text);
+	const color : ColorInformation = {
+		range: { start:{line:1, character:1}, end: {line:2, character:3} },
+		color: {
+			red:255,
+			blue: 0,
+			green: 0,
+			alpha: 125
 		}
-		return item;
-	}
-);
+	};
 
-connection.onHover(
-	(params: HoverParams): Promise<Hover> => {
-		return Promise.resolve({
-			contents: ["你好."],
-		});
-	}
-);
-
-// connection.onDocumentHighlight(documentHighlightParams => {
-// 	console.log('onDocumentHighlight');
-// 	console.log(documentHighlightParams);
-
-// 	const ret : DocumentHighlight[] = [];
-// 	ret.push({
-// 		range:{
-// 			start: { line: 5, character: 0 },
-// 			end : { line: 6, character : 0 }
-// 		},
-// 		kind: 2
-// 	});
-//     return ret;
-// });
-
-connection.onDocumentFormatting(
-	(params: DocumentFormattingParams): Promise<TextEdit[]> => {
-		const { textDocument } = params;
-		const doc = documents.get(textDocument.uri)!;
-		const text = doc.getText();
-		const pattern = /\b[A-Z]{3,}\b/g;
-		let match;
-		const res = [];
-		// 查找连续大写字符串
-		while ((match = pattern.exec(text))) {
-			res.push({
-				range: {
-					start: doc.positionAt(match.index),
-					end: doc.positionAt(match.index + match[0].length),
-				},
-				// 将大写字符串替换为 驼峰风格
-				newText: match[0].replace(/(?<=[A-Z])[A-Z]+/, (r) => r.toLowerCase()),
-			});
-		}
-
-		return Promise.resolve(res);
-	}
-);
-
-connection.onSignatureHelp(
-	(params: SignatureHelpParams): Promise<SignatureHelp> => {
-		return Promise.resolve({
-			signatures: [
-				{
-					label: "Signature Demo",
-					documentation: "帮助文档",
-					parameters: [
-						{
-							label: "@p1 first param",
-							documentation: "参数说明"
-						}
-					]
-				}
-			],
-			activeSignature: 0,
-			activeParameter: 0
-		});
-	}
-);
+	result.push(color);
+	return result;
+});
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
